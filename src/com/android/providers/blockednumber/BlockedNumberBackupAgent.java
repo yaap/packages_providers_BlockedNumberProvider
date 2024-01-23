@@ -84,18 +84,6 @@ public class BlockedNumberBackupAgent extends BackupAgent {
                           ParcelFileDescriptor newState) throws IOException {
         logV("Restoring blocked numbers.");
 
-        if (appVersionCode > VERSION) {
-            Log.w(TAG, "Backup version " + appVersionCode + " is newer than the current "
-                    + "supported version, " + VERSION);
-
-            // NOTE: We explicitly return here instead of throwing IOException.  The API docs state
-            // that the backup manager will treat an IOException as if the provider is now in a bad
-            // state and will clear its contents.  If the user tries to restore from a newer format
-            // than is supported, we can safely exit out here and leave whatever was in the blocked
-            // number list intact.  In practice this is likely an empty list on a new device.
-            return;
-        }
-
         while (data.readNextHeader()) {
             BackedUpBlockedNumber blockedNumber = readBlockedNumberFromData(data);
             if (blockedNumber != null) {
