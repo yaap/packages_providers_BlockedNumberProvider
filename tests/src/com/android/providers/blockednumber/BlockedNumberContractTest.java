@@ -32,7 +32,8 @@ import android.os.Bundle;
 import android.provider.BlockedNumberContract;
 import android.test.AndroidTestCase;
 import android.test.mock.MockContentResolver;
-import android.test.suitebuilder.annotation.SmallTest;
+
+import androidx.test.filters.SmallTest;
 
 import junit.framework.TestCase;
 

@@ -16,6 +16,8 @@
 
 package com.android.providers.blockednumber;
 
+import com.android.internal.annotations.VisibleForTesting;
+
 import android.annotation.Nullable;
 import android.app.backup.BackupAgent;
 import android.app.backup.BackupDataInput;
@@ -53,6 +55,8 @@ public class BlockedNumberBackupAgent extends BackupAgent {
     private static final String TAG = "BlockedNumberBackup";
     private static final int VERSION = 1;
     private static final boolean DEBUG = false; // DO NOT SUBMIT WITH TRUE.
+
+    private int mRestoredCount = 0;
 
     @Override
     public void onBackup(ParcelFileDescriptor oldState, BackupDataOutput backupDataOutput,
@@ -209,7 +213,15 @@ public class BlockedNumberBackupAgent extends BackupAgent {
             byte[] byteArray = new byte[data.getDataSize()];
             data.readEntityData(byteArray, 0, byteArray.length);
             DataInputStream dataInput = new DataInputStream(new ByteArrayInputStream(byteArray));
-            dataInput.readInt(); // Ignore version.
+            int version = dataInput.readInt();
+            if (version > VERSION) {
+                // If somehow we got a backed up row that is newer than the supported file format
+                // we know of, we will log an error and return null to represent an invalid item.
+                String errorMessage = "Backup version " + version + " is newer than the current "
+                        + "supported version, " + VERSION;
+                Log.w(TAG, errorMessage);
+                return null;
+            }
             BackedUpBlockedNumber blockedNumber =
                     new BackedUpBlockedNumber(id, readString(dataInput), readString(dataInput));
             logV("Restoring blocked number: " + blockedNumber);
@@ -221,6 +233,7 @@ public class BlockedNumberBackupAgent extends BackupAgent {
     }
 
     private void writeToProvider(BackedUpBlockedNumber blockedNumber) {
+        mRestoredCount++;
         ContentValues contentValues = new ContentValues();
         contentValues.put(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER,
                 blockedNumber.originalNumber);
@@ -232,6 +245,11 @@ public class BlockedNumberBackupAgent extends BackupAgent {
         } catch (Exception e) {
             Log.e(TAG, "Unable to insert blocked number " + blockedNumber + " :" + e.getMessage());
         }
+    }
+
+    @VisibleForTesting
+    public int getRestoredCount() {
+        return mRestoredCount;
     }
 
     private static boolean isDebug() {
