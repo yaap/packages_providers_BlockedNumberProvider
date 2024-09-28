@@ -752,6 +752,15 @@ public class BlockedNumberProviderTest extends AndroidTestCase {
         assertFalse(BlockedNumberContract.canCurrentUserBlockNumbers(mMockContext));
     }
 
+    public void testCanCurrentUserBlockUsers_MainUser() {
+        if (android.multiuser.Flags.allowMainUserToAccessBlockedNumberProvider()) {
+            int mainUserId = 12;
+            doReturn(mainUserId).when(mMockContext).getUserId();
+            doReturn(true).when(mMockUserManager).isMainUser();
+            assertTrue(BlockedNumberContract.canCurrentUserBlockNumbers(mMockContext));
+        }
+    }
+
     private void assertIsBlocked(boolean expected, String phoneNumber) {
         assertEquals(expected, BlockedNumberContract.isBlocked(mMockContext, phoneNumber));
     }
