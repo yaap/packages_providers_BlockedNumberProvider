@@ -416,7 +416,12 @@ public class BlockedNumberProvider extends ContentProvider {
             return false;
         }
         try {
-            return tm.isEmergencyNumber(phoneNumber) || tm.isEmergencyNumber(e164Number);
+            if (com.android.providers.blockednumber.flags.Flags.ignoreInvalidEmergencyNumbers()) {
+                return tm.isEmergencyNumber(phoneNumber)
+                    || (!TextUtils.isEmpty(e164Number) && tm.isEmergencyNumber(e164Number));
+            } else {
+                return tm.isEmergencyNumber(phoneNumber) || tm.isEmergencyNumber(e164Number);
+            }
         } catch (UnsupportedOperationException | IllegalStateException e) {
             return false;
         }
@@ -727,6 +732,10 @@ public class BlockedNumberProvider extends ContentProvider {
     }
 
     private boolean passesSystemPermissionCheck(String permission) {
+        if (getContext().checkCallingOrSelfPermission(TelecomManager.PERMISSION_TELECOM_UI_ACCESS)
+                == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
         return getContext().checkCallingPermission(permission)
                 == PackageManager.PERMISSION_GRANTED;
     }
